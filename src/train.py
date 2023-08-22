@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
     parser.add_argument("--dataset", type=str, default="mnist")
     parser.add_argument("--target_label", type=int, default=0)
-    parser.add_argument("--data_dir", type=str, default="/")
+    parser.add_argument("--data_dir", type=str, default="./")
     parser.add_argument("--hidden_size", type=int, default=20)
     parser.add_argument("--n_layers", type=int, default=3)
     parser.add_argument("--max_epochs", type=int, default=200)
