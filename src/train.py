@@ -63,11 +63,7 @@ def main(
         )
     else:
         raise ValueError(f"Not valid model name {model}")
-    logger = MLFlowLogger(
-        experiment_name=experiment_name,
-        tracking_uri=tracking_uri,
-        run_name=f"{model}_{target_label}"
-    )
+    logger = MLFlowLogger(experiment_name=experiment_name, tracking_uri=tracking_uri)
     logger.log_hyperparams(
         {
             "model": model,
@@ -126,7 +122,7 @@ if __name__ == "__main__":
         hidden_size=args.hidden_size,
         n_layers=args.n_layers,
         max_epochs=args.max_epochs,
-        experiment_name=f"SIMO_{args.dataset}",
+        experiment_name=f"SIMO_{args.dataset}_{args.model}_{args.target_label}",
         tracking_uri=args.tracking_uri,
         n_trial=args.n_trial,
         unimodal=args.unimodal,
