@@ -63,7 +63,11 @@ def main(
         )
     else:
         raise ValueError(f"Not valid model name {model}")
-    logger = MLFlowLogger(experiment_name=experiment_name, tracking_uri=tracking_uri)
+    logger = MLFlowLogger(
+        experiment_name=experiment_name,
+        tracking_uri=tracking_uri,
+        run_name=f"{model}_{target_label}"
+    )
     logger.log_hyperparams(
         {
             "model": model,
@@ -97,9 +101,11 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
     parser.add_argument("--dataset", type=str, default="mnist")
     parser.add_argument("--target_label", type=int, default=0)
-    parser.add_argument("--data_dir", type=str, default="./")
+    parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--hidden_size", type=int, default=20)
-    parser.add_argument("--n_layers", type=int, default=3)
+    # number of neurons of the layer between the encoder and the decoder
+    parser.add_argument("--n_layers", type=int, default=10)
+    # number of layers on either side, total = n_layers * 2
     parser.add_argument("--max_epochs", type=int, default=200)
     parser.add_argument("--experiment_name", type=str, default="RaPP")
     parser.add_argument("--tracking_uri", type=str, default="file:./mlruns")
@@ -120,7 +126,7 @@ if __name__ == "__main__":
         hidden_size=args.hidden_size,
         n_layers=args.n_layers,
         max_epochs=args.max_epochs,
-        experiment_name=args.experiment_name,
+        experiment_name=f"SIMO_{args.dataset}",
         tracking_uri=args.tracking_uri,
         n_trial=args.n_trial,
         unimodal=args.unimodal,
