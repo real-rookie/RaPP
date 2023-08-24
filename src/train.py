@@ -4,7 +4,7 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import MLFlowLogger
 
-from rapp.data import MNISTDataModule
+from rapp.data import DataModule
 from rapp.models import (
     AutoEncoder,
     AdversarialAutoEncoder,
@@ -29,33 +29,34 @@ def main(
     rapp_start_index: int,
     rapp_end_index: int,
 ):
-    if dataset == "mnist":
-        data_module = MNISTDataModule(
+    if dataset in ["MNIST", "FashionMNIST", "CIFAR10"]:
+        data_module = DataModule(
+            dataset=dataset,
             data_dir=data_dir,
             unseen_label=target_label,
             normalize=True,
             unimodal=unimodal,
         )
-        input_size = 28 ** 2
+        input_size = 0
     else:
         raise ValueError(f"Not valid dataset name {dataset}")
     if model == "ae":
         auto_encoder = AutoEncoder(
-            input_size=input_size,
+            input_size=data_module.image_size,
             hidden_size=hidden_size,
             n_layers=n_layers,
             loss_reduction=loss_reduction,
         )
     elif model == "vae":
         auto_encoder = VariationalAutoEncoder(
-            input_size=input_size,
+            input_size=data_module.image_size,
             hidden_size=hidden_size,
             n_layers=n_layers,
             loss_reduction=loss_reduction,
         )
     elif model == "aae":
         auto_encoder = AdversarialAutoEncoder(
-            input_size=input_size,
+            input_size=data_module.image_size,
             hidden_size=hidden_size,
             n_layers=n_layers,
             d_layers=n_layers,

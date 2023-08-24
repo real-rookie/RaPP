@@ -3,18 +3,17 @@ from typing import Optional
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split, ConcatDataset
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, FashionMNIST, CIFAR10
 from torchvision import transforms as T
 import pytorch_lightning as pl
 
 from .dataset import CustomDataset, _flatten, _normalize
 
 
-class MNISTDataModule(pl.LightningDataModule):
-    name = "mnist"
-
+class DataModule(pl.LightningDataModule):
     def __init__(
         self,
+        dataset: str,
         data_dir: str = "",
         num_workers: int = 8,
         normalize: bool = True,
@@ -26,7 +25,12 @@ class MNISTDataModule(pl.LightningDataModule):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.dims = (1, 28, 28)
+        assert dataset in ["MNIST", "FashionMNIST", "CIFAR10"]
+        self.dataset = dataset
+        if dataset in ["MNIST", "FashionMNIST"]:
+            self.image_size = 1 * 28 * 28
+        elif dataset == "CIFAR10":
+            self.image_size = 3 * 32 * 32
         self.data_dir = data_dir
         self.num_workers = num_workers
         self.normalize = normalize
@@ -44,18 +48,34 @@ class MNISTDataModule(pl.LightningDataModule):
         return 10
 
     def prepare_data(self):
-        """Saves MNIST files to `data_dir`"""
-        MNIST(self.data_dir, train=True, download=True)
-        MNIST(self.data_dir, train=False, download=True)
+        """Saves files to `data_dir`"""
+        if self.dataset == "MNIST":
+            MNIST(self.data_dir, train=True, download=True)
+            MNIST(self.data_dir, train=False, download=True)
+        elif self.dataset == "FashionMNIST":
+            FashionMNIST(self.data_dir, train=True, download=True)
+            FashionMNIST(self.data_dir, train=False, download=True)
+        elif self.dataset == "CIFAR10":
+            CIFAR10(self.data_dir, train=True, download=True)
+            CIFAR10(self.data_dir, train=False, download=True)
 
     def setup(self, stage: Optional[str] = None):
         """Split the train and valid dataset"""
         # get all dataset
         extra = dict(transform=self.default_transforms)
-        train_dataset = MNIST(self.data_dir, train=True, download=False)
-        test_dataset = MNIST(self.data_dir, train=False, download=False)
-        train_data, train_label = train_dataset.data, train_dataset.targets
-        test_data, test_label = test_dataset.data, test_dataset.targets
+        train_dataset, test_dataset = None, None
+        if self.dataset == "MNIST":
+            train_dataset = MNIST(self.data_dir, train=True, download=False)
+            test_dataset = MNIST(self.data_dir, train=False, download=False)
+        elif self.dataset == "FashionMNIST":
+            train_dataset = FashionMNIST(self.data_dir, train=True, download=False)
+            test_dataset = FashionMNIST(self.data_dir, train=False, download=False)
+        elif self.dataset == "CIFAR10":
+            train_dataset = CIFAR10(self.data_dir, train=True, download=False)
+            test_dataset = CIFAR10(self.data_dir, train=False, download=False)
+        assert train_dataset is not None and test_dataset is not None
+        train_data, train_label = torch.tensor(train_dataset.data), torch.tensor(train_dataset.targets)
+        test_data, test_label = torch.tensor(test_dataset.data), torch.tensor(test_dataset.targets)
         data = torch.cat([train_data, test_data])
         labels = torch.cat([train_label, test_label])
 

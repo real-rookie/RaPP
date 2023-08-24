@@ -1,1 +1,1 @@
-from .mnist import MNISTDataModule
+from .datamodule import DataModule
