@@ -14,13 +14,13 @@ class DataModule(pl.LightningDataModule):
     def __init__(
         self,
         dataset: str,
-        data_dir: str = "",
+        setting: str, # options:["SIMO", "inter_set", "set_to_set"]
+        data_dir: str = "./data",
         num_workers: int = 8,
         normalize: bool = True,
         seed: int = 42,
         batch_size: int = 256,
-        unseen_label: int = 0,
-        setting: str = "SIMO", # options:["SIMO", "inter_set", "set_to_set"]
+        normal_label: int = 0,
     ):
         super().__init__()
         assert dataset in ["MNIST", "FashionMNIST", "CIFAR10"]
@@ -34,7 +34,7 @@ class DataModule(pl.LightningDataModule):
         self.normalize = normalize
         self.seed = seed
         self.batch_size = batch_size
-        self.unseen_label = unseen_label
+        self.normal_label = normal_label
         self.setting = setting
         self.dataset_train = ...
         self.dataset_val = ...
@@ -76,9 +76,12 @@ class DataModule(pl.LightningDataModule):
         # split data with seen labels and unseen labels
         seen_idx, unseen_idx = None, None
         if self.setting == "SIMO":
-            # if unimodal unseen_label converts meaning with seen_label
-            seen_idx = labels == self.unseen_label
-            unseen_idx = labels != self.unseen_label
+            seen_idx = labels == self.normal_label
+            unseen_idx = labels != self.normal_label
+        elif self.setting == "inter_set":
+            seen_idx = labels < 5
+            unseen_idx = labels >= 5
+
         assert seen_idx is not None and unseen_idx is not None
         seen_data = data[seen_idx]
         unseen_data = data[unseen_idx]
@@ -87,10 +90,10 @@ class DataModule(pl.LightningDataModule):
         train_size = int(seen_data.size(0) * 0.6)
         valid_size = int(seen_data.size(0) * 0.2)
         test_size = len(seen_data) - train_size - valid_size
-        if self.setting == "SIMO":
-            sample_idx = np.random.choice(len(unseen_data), test_size, replace=False)
-            sample_idx.sort()
-            unseen_data = unseen_data[sample_idx]
+
+        sample_idx = np.random.choice(len(unseen_data), test_size, replace=False)
+        sample_idx.sort()
+        unseen_data = unseen_data[sample_idx]
 
         seen_dataset = CustomDataset(
             seen_data, torch.Tensor([0] * len(seen_data)), **extra

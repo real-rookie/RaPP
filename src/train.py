@@ -29,17 +29,14 @@ def main(
     rapp_start_index: int,
     rapp_end_index: int,
 ):
-    if dataset in ["MNIST", "FashionMNIST", "CIFAR10"]:
-        data_module = DataModule(
-            dataset=dataset,
-            data_dir=data_dir,
-            unseen_label=target_label,
-            normalize=True,
-            setting=setting,
-        )
-        input_size = 0
-    else:
-        raise ValueError(f"Not valid dataset name {dataset}")
+
+    data_module = DataModule(
+        dataset=dataset,
+        data_dir=data_dir,
+        normal_label=target_label,
+        normalize=True,
+        setting=setting,
+    )
     if model == "ae":
         auto_encoder = AutoEncoder(
             input_size=data_module.image_size,
@@ -69,6 +66,7 @@ def main(
         {
             "model": model,
             "dataset": dataset,
+            "setting": setting,
             "target_label": target_label,
             "hidden_size": hidden_size,
             "n_layers": n_layers,
@@ -96,19 +94,17 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
-    parser.add_argument("--dataset", type=str, default="mnist")
-    parser.add_argument("--target_label", type=int, default=0)
+    parser.add_argument("--dataset", type=str, default="MNIST", choices=["MNIST", "FashionMNIST", "CIFAR10"])
+    parser.add_argument("--target_label", type=int, default=0, help="useful only when setting=SIMO")
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--hidden_size", type=int, default=20)
     # number of neurons of the layer between the encoder and the decoder
     parser.add_argument("--n_layers", type=int, default=10)
     # number of layers on either side, total = n_layers * 2
     parser.add_argument("--max_epochs", type=int, default=200)
-    parser.add_argument("--experiment_name", type=str, default="RaPP")
     parser.add_argument("--tracking_uri", type=str, default="file:./mlruns")
     parser.add_argument("--n_trial", type=int, default=0)
-    parser.add_argument("--setting", type=str, default="SIMO")
-    # --setting options: ["SIMO", "inter_set", "set_to_set"]
+    parser.add_argument("--setting", type=str, default="SIMO", choices=["SIMO", "inter_set", "set_to_set"])
     parser.add_argument("--rapp_start_index", type=int, default=0)
     parser.add_argument("--rapp_end_index", type=int, default=-1)
     parser.add_argument(
@@ -124,7 +120,7 @@ if __name__ == "__main__":
         hidden_size=args.hidden_size,
         n_layers=args.n_layers,
         max_epochs=args.max_epochs,
-        experiment_name=f"SIMO_{args.dataset}_{args.model}_{args.target_label}",
+        experiment_name=f"{args.setting}_{args.dataset}_{args.model}_{args.target_label}",
         tracking_uri=args.tracking_uri,
         n_trial=args.n_trial,
         setting=args.setting,
