@@ -24,7 +24,7 @@ def main(
     experiment_name: str,
     tracking_uri: str,
     n_trial: int,
-    unimodal: bool,
+    setting: str,
     loss_reduction: str,
     rapp_start_index: int,
     rapp_end_index: int,
@@ -35,7 +35,7 @@ def main(
             data_dir=data_dir,
             unseen_label=target_label,
             normalize=True,
-            unimodal=unimodal,
+            setting=setting,
         )
         input_size = 0
     else:
@@ -107,7 +107,8 @@ if __name__ == "__main__":
     parser.add_argument("--experiment_name", type=str, default="RaPP")
     parser.add_argument("--tracking_uri", type=str, default="file:./mlruns")
     parser.add_argument("--n_trial", type=int, default=0)
-    parser.add_argument("--unimodal", action="store_true")
+    parser.add_argument("--setting", type=str, default="SIMO")
+    # --setting options: ["SIMO", "inter_set", "set_to_set"]
     parser.add_argument("--rapp_start_index", type=int, default=0)
     parser.add_argument("--rapp_end_index", type=int, default=-1)
     parser.add_argument(
@@ -126,7 +127,7 @@ if __name__ == "__main__":
         experiment_name=f"SIMO_{args.dataset}_{args.model}_{args.target_label}",
         tracking_uri=args.tracking_uri,
         n_trial=args.n_trial,
-        unimodal=args.unimodal,
+        setting=args.setting,
         loss_reduction=args.loss_reduction,
         rapp_start_index=args.rapp_start_index,
         rapp_end_index=args.rapp_end_index,

@@ -20,11 +20,9 @@ class DataModule(pl.LightningDataModule):
         seed: int = 42,
         batch_size: int = 256,
         unseen_label: int = 0,
-        unimodal: bool = False,
-        *args,
-        **kwargs,
+        setting: str = "SIMO", # options:["SIMO", "inter_set", "set_to_set"]
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         assert dataset in ["MNIST", "FashionMNIST", "CIFAR10"]
         self.dataset = dataset
         if dataset in ["MNIST", "FashionMNIST"]:
@@ -37,15 +35,11 @@ class DataModule(pl.LightningDataModule):
         self.seed = seed
         self.batch_size = batch_size
         self.unseen_label = unseen_label
-        self.unimodal = unimodal
+        self.setting = setting
         self.dataset_train = ...
         self.dataset_val = ...
         self.dataset_test = ...
         self.test_transforms = self.default_transforms
-
-    @property
-    def num_classes(self):
-        return 10
 
     def prepare_data(self):
         """Saves files to `data_dir`"""
@@ -80,14 +74,12 @@ class DataModule(pl.LightningDataModule):
         labels = torch.cat([train_label, test_label])
 
         # split data with seen labels and unseen labels
-        if self.unimodal:
+        seen_idx, unseen_idx = None, None
+        if self.setting == "SIMO":
             # if unimodal unseen_label converts meaning with seen_label
             seen_idx = labels == self.unseen_label
             unseen_idx = labels != self.unseen_label
-        else:
-            seen_idx = labels != self.unseen_label
-            unseen_idx = labels == self.unseen_label
-
+        assert seen_idx is not None and unseen_idx is not None
         seen_data = data[seen_idx]
         unseen_data = data[unseen_idx]
 
@@ -95,7 +87,7 @@ class DataModule(pl.LightningDataModule):
         train_size = int(seen_data.size(0) * 0.6)
         valid_size = int(seen_data.size(0) * 0.2)
         test_size = len(seen_data) - train_size - valid_size
-        if self.unimodal:
+        if self.setting == "SIMO":
             sample_idx = np.random.choice(len(unseen_data), test_size, replace=False)
             sample_idx.sort()
             unseen_data = unseen_data[sample_idx]
