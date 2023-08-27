@@ -15,7 +15,7 @@ from rapp.models import (
 
 def main(
     model: str,
-    dataset: str,
+    dataset_normal: str,
     target_label: int,
     data_dir: str,
     hidden_size: int,
@@ -31,7 +31,7 @@ def main(
 ):
 
     data_module = DataModule(
-        dataset=dataset,
+        dataset_normal=dataset_normal,
         data_dir=data_dir,
         normal_label=target_label,
         normalize=True,
@@ -65,7 +65,7 @@ def main(
     logger.log_hyperparams(
         {
             "model": model,
-            "dataset": dataset,
+            "dataset": dataset_normal,
             "setting": setting,
             "target_label": target_label,
             "hidden_size": hidden_size,
@@ -94,7 +94,7 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
-    parser.add_argument("--dataset", type=str, default="MNIST", choices=["MNIST", "FashionMNIST", "CIFAR10"])
+    parser.add_argument("--dataset_normal", type=str, default="MNIST", choices=["MNIST", "FashionMNIST", "CIFAR10"])
     parser.add_argument("--target_label", type=int, default=0, help="useful only when setting=SIMO")
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--hidden_size", type=int, default=20)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     main(
         model=args.model,
-        dataset=args.dataset,
+        dataset_normal=args.dataset_normal,
         target_label=args.target_label,
         data_dir=args.data_dir,
         hidden_size=args.hidden_size,

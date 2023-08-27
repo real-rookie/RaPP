@@ -13,7 +13,7 @@ from .dataset import CustomDataset, _flatten, _normalize
 class DataModule(pl.LightningDataModule):
     def __init__(
         self,
-        dataset: str,
+        dataset_normal: str,
         setting: str, # options:["SIMO", "inter_set", "set_to_set"]
         data_dir: str = "./data",
         num_workers: int = 8,
@@ -23,11 +23,11 @@ class DataModule(pl.LightningDataModule):
         normal_label: int = 0,
     ):
         super().__init__()
-        assert dataset in ["MNIST", "FashionMNIST", "CIFAR10"]
-        self.dataset = dataset
-        if dataset in ["MNIST", "FashionMNIST"]:
+        assert dataset_normal in ["MNIST", "FashionMNIST", "CIFAR10"]
+        self.dataset_normal = dataset_normal
+        if dataset_normal in ["MNIST", "FashionMNIST"]:
             self.image_size = 1 * 28 * 28
-        elif dataset == "CIFAR10":
+        elif dataset_normal == "CIFAR10":
             self.image_size = 3 * 32 * 32
         self.data_dir = data_dir
         self.num_workers = num_workers
@@ -43,13 +43,13 @@ class DataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         """Saves files to `data_dir`"""
-        if self.dataset == "MNIST":
+        if self.dataset_normal == "MNIST":
             MNIST(self.data_dir, train=True, download=True)
             MNIST(self.data_dir, train=False, download=True)
-        elif self.dataset == "FashionMNIST":
+        elif self.dataset_normal == "FashionMNIST":
             FashionMNIST(self.data_dir, train=True, download=True)
             FashionMNIST(self.data_dir, train=False, download=True)
-        elif self.dataset == "CIFAR10":
+        elif self.dataset_normal == "CIFAR10":
             CIFAR10(self.data_dir, train=True, download=True)
             CIFAR10(self.data_dir, train=False, download=True)
 
@@ -58,13 +58,13 @@ class DataModule(pl.LightningDataModule):
         # get all dataset
         extra = dict(transform=self.default_transforms)
         train_dataset, test_dataset = None, None
-        if self.dataset == "MNIST":
+        if self.dataset_normal == "MNIST":
             train_dataset = MNIST(self.data_dir, train=True, download=False)
             test_dataset = MNIST(self.data_dir, train=False, download=False)
-        elif self.dataset == "FashionMNIST":
+        elif self.dataset_normal == "FashionMNIST":
             train_dataset = FashionMNIST(self.data_dir, train=True, download=False)
             test_dataset = FashionMNIST(self.data_dir, train=False, download=False)
-        elif self.dataset == "CIFAR10":
+        elif self.dataset_normal == "CIFAR10":
             train_dataset = CIFAR10(self.data_dir, train=True, download=False)
             test_dataset = CIFAR10(self.data_dir, train=False, download=False)
         assert train_dataset is not None and test_dataset is not None
