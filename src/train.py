@@ -16,7 +16,8 @@ from rapp.models import (
 def main(
     model: str,
     dataset_normal: str,
-    target_label: int,
+    dataset_novel: str,
+    normal_label: int,
     data_dir: str,
     hidden_size: int,
     n_layers: int,
@@ -32,9 +33,9 @@ def main(
 
     data_module = DataModule(
         dataset_normal=dataset_normal,
+        dataset_novel=dataset_novel,
         data_dir=data_dir,
-        normal_label=target_label,
-        normalize=True,
+        normal_label=normal_label,
         setting=setting,
     )
     if model == "ae":
@@ -67,7 +68,7 @@ def main(
             "model": model,
             "dataset": dataset_normal,
             "setting": setting,
-            "target_label": target_label,
+            "normal_label": normal_label,
             "hidden_size": hidden_size,
             "n_layers": n_layers,
             "max_epochs": max_epochs,
@@ -94,8 +95,13 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
-    parser.add_argument("--dataset_normal", type=str, default="MNIST", choices=["MNIST", "FashionMNIST", "CIFAR10"])
-    parser.add_argument("--target_label", type=int, default=0, help="useful only when setting=SIMO")
+    parser.add_argument("--dataset_normal", type=str, default="MNIST",
+                        choices=["MNIST", "FashionMNIST", "CIFAR10"])
+    parser.add_argument("--dataset_novel", type=str, default="MNIST",
+                        choices=["MNIST", "FashionMNIST", "CIFAR10"],
+                        help="useful only when setting is set_to_set")
+    parser.add_argument("--normal_label", type=int, default=0,
+                        help="useful only when setting is SIMO")
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--hidden_size", type=int, default=20)
     # number of neurons of the layer between the encoder and the decoder
@@ -104,23 +110,32 @@ if __name__ == "__main__":
     parser.add_argument("--max_epochs", type=int, default=200)
     parser.add_argument("--tracking_uri", type=str, default="file:./mlruns")
     parser.add_argument("--n_trial", type=int, default=0)
-    parser.add_argument("--setting", type=str, default="SIMO", choices=["SIMO", "inter_set", "set_to_set"])
+    parser.add_argument("--setting", type=str, default="SIMO",
+                        choices=["SIMO", "inter_set", "set_to_set"])
     parser.add_argument("--rapp_start_index", type=int, default=0)
     parser.add_argument("--rapp_end_index", type=int, default=-1)
-    parser.add_argument(
-        "--loss_reduction", type=str, default="sum", choices=["sum", "mean"]
-    )
+    parser.add_argument("--loss_reduction", type=str, default="sum",
+                        choices=["sum", "mean"])
     args = parser.parse_args()
-
+    assert args.dataset_normal != args.dataset_novel
+    experiment_name = None
+    if args.setting == "SIMO":
+        experiment_name = f"{args.setting}_{args.dataset_normal}_{args.model}_{args.normal_label}"
+    elif args.setting == "inter_set":
+        experiment_name = f"{args.setting}_{args.dataset_normal}_{args.model}"
+    elif args.setting == "set_to_set":
+        experiment_name = f"{args.setting}_{args.dataset_normal}_{args.model}_{args.dataset_novel}"
+    assert experiment_name is not None
     main(
         model=args.model,
         dataset_normal=args.dataset_normal,
-        target_label=args.target_label,
+        dataset_novel=args.dataset_novel,
+        normal_label=args.normal_label,
         data_dir=args.data_dir,
         hidden_size=args.hidden_size,
         n_layers=args.n_layers,
         max_epochs=args.max_epochs,
-        experiment_name=f"{args.setting}_{args.dataset}_{args.model}_{args.target_label}",
+        experiment_name=experiment_name,
         tracking_uri=args.tracking_uri,
         n_trial=args.n_trial,
         setting=args.setting,

@@ -14,24 +14,31 @@ class DataModule(pl.LightningDataModule):
     def __init__(
         self,
         dataset_normal: str,
+        dataset_novel: str,
         setting: str, # options:["SIMO", "inter_set", "set_to_set"]
         data_dir: str = "./data",
         num_workers: int = 8,
-        normalize: bool = True,
         seed: int = 42,
         batch_size: int = 256,
         normal_label: int = 0,
     ):
         super().__init__()
-        assert dataset_normal in ["MNIST", "FashionMNIST", "CIFAR10"]
+        self.class_dict = {
+            "MNIST": MNIST,
+            "FashionMNIST": FashionMNIST,
+            "CIFAR": CIFAR10,
+        }
+        assert dataset_normal in self.class_dict.keys()
+        assert dataset_novel in self.class_dict.keys()
+        assert dataset_normal != dataset_novel
         self.dataset_normal = dataset_normal
+        self.dataset_novel = dataset_novel
         if dataset_normal in ["MNIST", "FashionMNIST"]:
             self.image_size = 1 * 28 * 28
         elif dataset_normal == "CIFAR10":
             self.image_size = 3 * 32 * 32
         self.data_dir = data_dir
         self.num_workers = num_workers
-        self.normalize = normalize
         self.seed = seed
         self.batch_size = batch_size
         self.normal_label = normal_label
@@ -42,32 +49,41 @@ class DataModule(pl.LightningDataModule):
         self.test_transforms = self.default_transforms
 
     def prepare_data(self):
+        if self.setting == "SIMO":
+            self.prepare_data_SIMO()
+        elif self.setting == "inter_set":
+            self.prepare_data_inter_set()
+        elif self.setting == "set_to_set":
+            self.prepare_data_set_to_set()
+
+    def prepare_data_SIMO(self):
         """Saves files to `data_dir`"""
-        if self.dataset_normal == "MNIST":
-            MNIST(self.data_dir, train=True, download=True)
-            MNIST(self.data_dir, train=False, download=True)
-        elif self.dataset_normal == "FashionMNIST":
-            FashionMNIST(self.data_dir, train=True, download=True)
-            FashionMNIST(self.data_dir, train=False, download=True)
-        elif self.dataset_normal == "CIFAR10":
-            CIFAR10(self.data_dir, train=True, download=True)
-            CIFAR10(self.data_dir, train=False, download=True)
+        self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
+        self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
+    
+    def prepare_data_inter_set(self):
+        self.prepare_data_SIMO()
+
+    def prepare_data_set_to_set(self):
+        # normal dataset
+        self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
+        self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
+        # novel dataset
+        self.class_dict[self.dataset_novel](self.data_dir, train=True, download=True)
+        self.class_dict[self.dataset_novel](self.data_dir, train=False, download=True)
 
     def setup(self, stage: Optional[str] = None):
-        """Split the train and valid dataset"""
-        # get all dataset
-        extra = dict(transform=self.default_transforms)
-        train_dataset, test_dataset = None, None
-        if self.dataset_normal == "MNIST":
-            train_dataset = MNIST(self.data_dir, train=True, download=False)
-            test_dataset = MNIST(self.data_dir, train=False, download=False)
-        elif self.dataset_normal == "FashionMNIST":
-            train_dataset = FashionMNIST(self.data_dir, train=True, download=False)
-            test_dataset = FashionMNIST(self.data_dir, train=False, download=False)
-        elif self.dataset_normal == "CIFAR10":
-            train_dataset = CIFAR10(self.data_dir, train=True, download=False)
-            test_dataset = CIFAR10(self.data_dir, train=False, download=False)
-        assert train_dataset is not None and test_dataset is not None
+        if self.setting == "SIMO":
+            self.setup_SIMO()
+        elif self.setting == "inter_set":
+            self.setup_inter_set()
+        elif self.setting == "set_to_set":
+            self.setup_set_to_set()
+
+    def setup_SIMO(self):
+        train_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
+        test_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
+
         train_data, train_label = torch.tensor(train_dataset.data), torch.tensor(train_dataset.targets)
         test_data, test_label = torch.tensor(test_dataset.data), torch.tensor(test_dataset.targets)
         data = torch.cat([train_data, test_data])
@@ -86,20 +102,44 @@ class DataModule(pl.LightningDataModule):
         seen_data = data[seen_idx]
         unseen_data = data[unseen_idx]
 
-        # split seen data to train, valid, test
+        self.split_dataset(seen_data, unseen_data)
+
+    def setup_inter_set(self):
+        self.setup_SIMO()
+
+    def setup_set_to_set(self):
+        # normal dataset
+        train_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
+        test_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
+        train_data_normal = torch.tensor(train_dataset_normal.data)
+        test_data_normal = torch.tensor(test_dataset_normal.data)
+        seen_data = torch.cat([train_data_normal, test_data_normal])
+        # novel dataset
+        train_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=True, download=False)
+        test_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=False, download=False)
+        train_data_novel = torch.tensor(train_dataset_novel.data)
+        test_data_novel = torch.tensor(test_dataset_novel.data)
+        unseen_data = torch.cat([train_data_novel, test_data_novel])
+
+        self.split_dataset(seen_data, unseen_data)
+
+    def split_dataset(self, seen_data, unseen_data):
+        # TODO transforms for unseen_dataset
+
         train_size = int(seen_data.size(0) * 0.6)
         valid_size = int(seen_data.size(0) * 0.2)
         test_size = len(seen_data) - train_size - valid_size
 
         sample_idx = np.random.choice(len(unseen_data), test_size, replace=False)
+        # auprc baseline is always 0.5
         sample_idx.sort()
         unseen_data = unseen_data[sample_idx]
 
         seen_dataset = CustomDataset(
-            seen_data, torch.Tensor([0] * len(seen_data)), **extra
+            seen_data, torch.Tensor([0] * len(seen_data)), self.default_transforms
         )
         unseen_dataset = CustomDataset(
-            unseen_data, torch.Tensor([1] * len(unseen_data)), **extra
+            unseen_data, torch.Tensor([1] * len(unseen_data)), # FIXME
         )
 
         self.dataset_train, self.dataset_val, test_data = random_split(
@@ -146,9 +186,9 @@ class DataModule(pl.LightningDataModule):
 
     @property
     def default_transforms(self):
+        #TODO different datasets have different sizes
         transforms = []
-        if self.normalize:
-            transforms.append(T.Lambda(_normalize))
+        transforms.append(T.Lambda(_normalize))
         transforms.append(T.Lambda(_flatten))
         transforms = T.Compose(transforms)
         return transforms
