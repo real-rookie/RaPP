@@ -81,15 +81,21 @@ def main(
     )
     gpus = 1 if torch.cuda.is_available() else 0
     trainer = pl.Trainer(logger=logger, max_epochs=max_epochs, gpus=gpus)
+    print("-------before fit--------")
     trainer.fit(auto_encoder, data_module)
+    print("-------after fit--------")
     rapp = RaPP(
         model=auto_encoder,
         rapp_start_index=rapp_start_index,
         rapp_end_index=rapp_end_index,
         loss_reduction=loss_reduction,
     )
+    print("-------before rapp fit--------")
     rapp.fit(data_module.train_dataloader())
+    print("-------after rapp fit--------")
+    print("-------before rapp test--------")
     result = rapp.test(data_module.test_dataloader())
+    print("-------after rapp test--------")
     logger.log_metrics(result)
 
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
     # number of neurons of the layer between the encoder and the decoder
     parser.add_argument("--n_layers", type=int, default=10)
     # number of layers on either side, total = n_layers * 2
-    parser.add_argument("--max_epochs", type=int, default=200)
+    parser.add_argument("--max_epochs", type=int, default=1)
     parser.add_argument("--tracking_uri", type=str, default="file:./mlruns")
     parser.add_argument("--n_trial", type=int, default=0)
     parser.add_argument("--setting", type=str, default="SIMO",

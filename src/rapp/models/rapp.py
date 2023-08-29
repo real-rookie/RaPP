@@ -45,9 +45,14 @@ class RaPP:
     def fit(self, train_loader: DataLoader) -> None:
         self.model.eval()
         outputs = []
-        for batch in train_loader:
+        print("-------before fit loop--------")
+        for n, batch in enumerate(train_loader):
             outputs += [self.training_step(batch)]
+            print(n, len(outputs), outputs[-1].shape)
+        print("-------after fit loop--------")
+        print("-------training_epoch_end--------")
         self.training_epoch_end(outputs)
+        print("-------training_epoch_end--------")
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
         x, y = batch

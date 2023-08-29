@@ -215,7 +215,9 @@ class DataModule(pl.LightningDataModule):
             # now both have 1 channel
         elif unseen_data.shape[1] < seen_data.shape[1]:
             # unseen_data has 1 channel but seen_data has 3 channels
+            print("-------before repeat--------")
             unseen_data = unseen_data.repeat(1,3,1,1)
+            print("-------after repeat--------")
             # now both have 3 channels
 
         return seen_data, unseen_data
