@@ -30,6 +30,7 @@ def main(
     rapp_start_index: int,
     rapp_end_index: int,
 ):
+    print("---------enter main----------")
 
     data_module = DataModule(
         dataset_normal=dataset_normal,
@@ -103,6 +104,7 @@ def main(
 
 
 if __name__ == "__main__":
+    print("---------__name__ == __main__:----------")
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
     parser.add_argument("--dataset_normal", type=str, default="MNIST",
@@ -136,6 +138,7 @@ if __name__ == "__main__":
     elif args.setting == "set_to_set":
         experiment_name = f"{args.setting}_{args.dataset_normal}_{args.model}_{args.dataset_novel}"
     assert experiment_name is not None
+    print("---------before main----------")
     main(
         model=args.model,
         dataset_normal=args.dataset_normal,
