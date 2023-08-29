@@ -29,10 +29,13 @@ class DataModule(pl.LightningDataModule):
             "CIFAR10": CIFAR10,
         }
         assert dataset_normal in self.class_dict.keys()
-        assert dataset_novel in self.class_dict.keys()
-        assert dataset_normal != dataset_novel
         self.dataset_normal = dataset_normal
-        self.dataset_novel = dataset_novel
+
+        if setting == "set_to_set":
+            assert dataset_novel in self.class_dict.keys()
+            assert dataset_normal != dataset_novel
+            self.dataset_novel = dataset_novel
+
         if dataset_normal in ["MNIST", "FashionMNIST"]:
             self.image_size = 1 * 28 * 28
         elif dataset_normal == "CIFAR10":
