@@ -26,7 +26,7 @@ class DataModule(pl.LightningDataModule):
         self.class_dict = {
             "MNIST": MNIST,
             "FashionMNIST": FashionMNIST,
-            "CIFAR": CIFAR10,
+            "CIFAR10": CIFAR10,
         }
         assert dataset_normal in self.class_dict.keys()
         assert dataset_novel in self.class_dict.keys()
@@ -124,7 +124,7 @@ class DataModule(pl.LightningDataModule):
         self.split_dataset(seen_data, unseen_data)
 
     def split_dataset(self, seen_data, unseen_data):
-        # TODO transforms for unseen_dataset
+        extra = dict(transform=self.default_transforms)
 
         train_size = int(seen_data.size(0) * 0.6)
         valid_size = int(seen_data.size(0) * 0.2)
@@ -134,12 +134,14 @@ class DataModule(pl.LightningDataModule):
         # auprc baseline is always 0.5
         sample_idx.sort()
         unseen_data = unseen_data[sample_idx]
-
+        if seen_data.shape[1:] != unseen_data.shape[1:]:
+            # if seen_data and unseen_data are from different datasets
+            seen_data, unseen_data = self.transform_data(seen_data, unseen_data)
         seen_dataset = CustomDataset(
-            seen_data, torch.Tensor([0] * len(seen_data)), self.default_transforms
+            seen_data, torch.Tensor([0] * len(seen_data)), **extra
         )
         unseen_dataset = CustomDataset(
-            unseen_data, torch.Tensor([1] * len(unseen_data)), # FIXME
+            unseen_data, torch.Tensor([1] * len(unseen_data)), **extra
         )
 
         self.dataset_train, self.dataset_val, test_data = random_split(
@@ -186,9 +188,36 @@ class DataModule(pl.LightningDataModule):
 
     @property
     def default_transforms(self):
-        #TODO different datasets have different sizes
         transforms = []
         transforms.append(T.Lambda(_normalize))
         transforms.append(T.Lambda(_flatten))
         transforms = T.Compose(transforms)
         return transforms
+    
+    def transform_data(self, seen_data, unseen_data):
+        if len(seen_data.shape) == 3:
+            seen_data = seen_data.unsqueeze(3)
+        if len(unseen_data.shape) == 3:
+            unseen_data = unseen_data.unsqueeze(3)
+        # now, both are of (N, H, W, C)
+
+        seen_data = seen_data.movedim(3,1)
+        unseen_data = unseen_data.movedim(3,1)
+        # now, both are of (N, C, H, W)
+
+        if seen_data.shape[2] != unseen_data.shape[2]:
+            unseen_data = T.Resize(seen_data.shape[2])(unseen_data)
+            # now the H and W of both seen_data and unseen_data are the same
+
+        if unseen_data.shape[1] > seen_data.shape[1]:
+            # unseen_data has 3 channels but seen_data only has 1 channel
+            unseen_data = T.functional.rgb_to_grayscale(unseen_data)
+            # now both have 1 channel
+        elif unseen_data.shape[1] < seen_data.shape[1]:
+            # unseen_data has 1 channel but seen_data has 3 channels
+            unseen_data = unseen_data.repeat(1,3,1,1)
+            # now both have 3 channels
+
+        return seen_data, unseen_data
+
+        

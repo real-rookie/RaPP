@@ -66,7 +66,8 @@ def main(
     logger.log_hyperparams(
         {
             "model": model,
-            "dataset": dataset_normal,
+            "dataset_normal": dataset_normal,
+            "dataset_novel": dataset_novel,
             "setting": setting,
             "normal_label": normal_label,
             "hidden_size": hidden_size,
