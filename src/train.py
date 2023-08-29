@@ -1,16 +1,21 @@
+print("---------before import argparse----------")
 import argparse
-
+print("---------before import torch----------")
 import torch
+print("---------before import pytorch_lightning as pl----------")
 import pytorch_lightning as pl
+print("---------before from pytorch_lightning.loggers import MLFlowLogger----------")
 from pytorch_lightning.loggers import MLFlowLogger
-
+print("---------before from rapp.data import DataModule----------")
 from rapp.data import DataModule
+print("---------before import autoencoders----------")
 from rapp.models import (
     AutoEncoder,
     AdversarialAutoEncoder,
     VariationalAutoEncoder,
     RaPP,
 )
+print("---------before if __name__ == ----------")
 
 
 def main(
