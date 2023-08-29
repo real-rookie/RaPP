@@ -38,6 +38,7 @@ def main(
         normal_label=normal_label,
         setting=setting,
     )
+    print("--------after define datamodule-----------")
     if model == "ae":
         auto_encoder = AutoEncoder(
             input_size=data_module.image_size,
@@ -62,7 +63,9 @@ def main(
         )
     else:
         raise ValueError(f"Not valid model name {model}")
+    print("--------after define autoencoder-----------")
     logger = MLFlowLogger(experiment_name=experiment_name, tracking_uri=tracking_uri)
+    print("--------after define logger-----------")
     logger.log_hyperparams(
         {
             "model": model,
