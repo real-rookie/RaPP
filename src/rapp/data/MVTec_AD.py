@@ -19,7 +19,7 @@ class MVTec_AD(Dataset):
         if image.shape[0] == 1:
             # some images have only 1 channel
             image = image.expand(3, -1, -1)
-        image = T.Resize([1024, 1024])(image)
+        image = T.Resize([128, 128])(image)
         label = self.img_labels.iloc[idx, 1]
         if self.transform:
             image = self.transform(image)

@@ -43,7 +43,7 @@ class DataModule(pl.LightningDataModule):
         elif dataset_normal == "CIFAR10":
             self.image_size = 3 * 32 * 32
         elif dataset_normal == "MVTec_AD":
-            self.image_size = 3 * 1024 * 1024
+            self.image_size = 3 * 128 * 128
         assert self.image_size is not None
         self.data_dir = data_dir
         self.num_workers = num_workers
