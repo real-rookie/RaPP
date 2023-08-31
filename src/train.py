@@ -97,9 +97,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="ae", choices=["ae", "aae", "vae"])
     parser.add_argument("--dataset_normal", type=str, default="MNIST",
-                        choices=["MNIST", "FashionMNIST", "CIFAR10"])
+                        choices=["MNIST", "FashionMNIST", "CIFAR10", "MVTec_AD"])
     parser.add_argument("--dataset_novel", type=str, default="MNIST",
-                        choices=["MNIST", "FashionMNIST", "CIFAR10"],
+                        choices=["MNIST", "FashionMNIST", "CIFAR10", "MVTec_AD"],
                         help="useful only when setting is set_to_set")
     parser.add_argument("--normal_label", type=int, default=0,
                         help="useful only when setting is SIMO")
