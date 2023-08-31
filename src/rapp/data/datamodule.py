@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 from torchvision.datasets import MNIST, FashionMNIST, CIFAR10
-import MVTec_AD
+from .MVTec_AD import MVTec_AD
 from torchvision import transforms as T
 import pytorch_lightning as pl
 
