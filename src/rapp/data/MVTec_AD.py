@@ -1,14 +1,13 @@
 import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.io import read_image
+from torchvision import transforms as T
 import torch
-"""
+
 class MVTec_AD(Dataset):
-    # to be tested
     def __init__(self, img_dir, labels_path, transform=None, target_transform=None):
-        # transform should at least have a resize
-        self.img_dir = img_dir
-        self.img_labels = pd.read_csv(labels_path)
+        self.img_dir = img_dir + "MVTec-AD"
+        self.img_labels = pd.read_csv(labels_path + "labels.csv")
         self.transform = transform
         self.target_transform = target_transform
 
@@ -20,21 +19,25 @@ class MVTec_AD(Dataset):
         if image.shape[0] == 1:
             # some images have only 1 channel
             image = image.expand(3, -1, -1)
+        image = T.functional.resize([1024, 1024], image)
         label = self.img_labels.iloc[idx, 1]
         if self.transform:
             image = self.transform(image)
-            image = image.movedim(0,2)
+        image = image.movedim(0,2)
         if self.target_transform:
             label = self.target_transform(label)
         return image, label
 
-    def get_data(self):
-        image, _ = self[0]
-        tensor = torch.tensor(image.unsqueeze(0))
+    @property
+    def data_targets(self):
+        images, labels = self[0]
+        images = torch.tensor(images)
+        labels = [labels]
         for index in range(1, self.__len__()):
             image, label = self[index]
-            print(label)
-            tensor = torch.cat([tensor, image.unsqueeze(0)], 0)
-        return tensor
-"""
+            images = torch.stack([images, image], 0)
+            labels.append(label)
+        labels = torch.tensor(labels)
+        return images, labels
+
 

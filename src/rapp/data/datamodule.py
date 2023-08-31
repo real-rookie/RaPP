@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 from torchvision.datasets import MNIST, FashionMNIST, CIFAR10
+import MVTec_AD
 from torchvision import transforms as T
 import pytorch_lightning as pl
 
@@ -27,6 +28,7 @@ class DataModule(pl.LightningDataModule):
             "MNIST": MNIST,
             "FashionMNIST": FashionMNIST,
             "CIFAR10": CIFAR10,
+            "MVTec_AD": MVTec_AD
         }
         assert dataset_normal in self.class_dict.keys()
         self.dataset_normal = dataset_normal
@@ -35,11 +37,14 @@ class DataModule(pl.LightningDataModule):
             assert dataset_novel in self.class_dict.keys()
             assert dataset_normal != dataset_novel
             self.dataset_novel = dataset_novel
-
+        self.image_size = None
         if dataset_normal in ["MNIST", "FashionMNIST"]:
             self.image_size = 1 * 28 * 28
         elif dataset_normal == "CIFAR10":
             self.image_size = 3 * 32 * 32
+        elif dataset_normal == "MVTec_AD":
+            self.image_size = 3 * 1024 * 1024
+        assert self.image_size is not None
         self.data_dir = data_dir
         self.num_workers = num_workers
         self.seed = seed
@@ -61,19 +66,22 @@ class DataModule(pl.LightningDataModule):
 
     def prepare_data_SIMO(self):
         """Saves files to `data_dir`"""
-        self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
-        self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
+        if self.dataset_normal != "MVTec_AD":
+            self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
+            self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
     
     def prepare_data_inter_set(self):
         self.prepare_data_SIMO()
 
     def prepare_data_set_to_set(self):
         # normal dataset
-        self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
-        self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
+        if self.dataset_normal != "MVTec_AD":
+            self.class_dict[self.dataset_normal](self.data_dir, train=True, download=True)
+            self.class_dict[self.dataset_normal](self.data_dir, train=False, download=True)
         # novel dataset
-        self.class_dict[self.dataset_novel](self.data_dir, train=True, download=True)
-        self.class_dict[self.dataset_novel](self.data_dir, train=False, download=True)
+        if self.dataset_novel != "MVTec_AD":
+            self.class_dict[self.dataset_novel](self.data_dir, train=True, download=True)
+            self.class_dict[self.dataset_novel](self.data_dir, train=False, download=True)
 
     def setup(self, stage: Optional[str] = None):
         if self.setting == "SIMO":
@@ -84,13 +92,17 @@ class DataModule(pl.LightningDataModule):
             self.setup_set_to_set()
 
     def setup_SIMO(self):
-        train_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
-        test_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
+        if self.dataset_normal != "MVTec_AD":
+            train_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
+            test_dataset = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
 
-        train_data, train_label = torch.tensor(train_dataset.data), torch.tensor(train_dataset.targets)
-        test_data, test_label = torch.tensor(test_dataset.data), torch.tensor(test_dataset.targets)
-        data = torch.cat([train_data, test_data])
-        labels = torch.cat([train_label, test_label])
+            train_data, train_label = torch.tensor(train_dataset.data), torch.tensor(train_dataset.targets)
+            test_data, test_label = torch.tensor(test_dataset.data), torch.tensor(test_dataset.targets)
+            data = torch.cat([train_data, test_data])
+            labels = torch.cat([train_label, test_label])
+        else:
+            dataset = self.class_dict[self.dataset_normal](img_dir=self.data_dir, labels_path=self.data_dir)
+            data, labels = dataset.data_targets
 
         # split data with seen labels and unseen labels
         seen_idx, unseen_idx = None, None
@@ -112,17 +124,26 @@ class DataModule(pl.LightningDataModule):
 
     def setup_set_to_set(self):
         # normal dataset
-        train_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
-        test_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
-        train_data_normal = torch.tensor(train_dataset_normal.data)
-        test_data_normal = torch.tensor(test_dataset_normal.data)
-        seen_data = torch.cat([train_data_normal, test_data_normal])
+        if self.dataset_normal != "MVTec_AD":
+            train_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=True, download=False)
+            test_dataset_normal = self.class_dict[self.dataset_normal](self.data_dir, train=False, download=False)
+            train_data_normal = torch.tensor(train_dataset_normal.data)
+            test_data_normal = torch.tensor(test_dataset_normal.data)
+            seen_data = torch.cat([train_data_normal, test_data_normal])
+        else:
+            dataset = self.class_dict[self.dataset_normal](img_dir=self.data_dir, labels_path=self.data_dir)
+            seen_data, _ = dataset.data_targets
+
         # novel dataset
-        train_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=True, download=False)
-        test_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=False, download=False)
-        train_data_novel = torch.tensor(train_dataset_novel.data)
-        test_data_novel = torch.tensor(test_dataset_novel.data)
-        unseen_data = torch.cat([train_data_novel, test_data_novel])
+        if self.dataset_normal != "MVTec_AD":
+            train_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=True, download=False)
+            test_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=False, download=False)
+            train_data_novel = torch.tensor(train_dataset_novel.data)
+            test_data_novel = torch.tensor(test_dataset_novel.data)
+            unseen_data = torch.cat([train_data_novel, test_data_novel])
+        else:
+            dataset = self.class_dict[self.dataset_normal](img_dir=self.data_dir, labels_path=self.data_dir)
+            unseen_data, _ = dataset.data_targets
 
         self.split_dataset(seen_data, unseen_data)
 
