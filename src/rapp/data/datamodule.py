@@ -191,7 +191,7 @@ class DataModule(pl.LightningDataModule):
         loader = DataLoader(
             self.dataset_val,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=self.num_workers,
             drop_last=False,
             pin_memory=True,
@@ -203,7 +203,7 @@ class DataModule(pl.LightningDataModule):
         loader = DataLoader(
             self.dataset_test,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=self.num_workers,
             drop_last=False,
             pin_memory=True,
