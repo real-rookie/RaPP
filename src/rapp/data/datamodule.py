@@ -135,7 +135,7 @@ class DataModule(pl.LightningDataModule):
             seen_data, _ = dataset.data_targets
 
         # novel dataset
-        if self.dataset_normal != "MVTec_AD":
+        if self.dataset_novel != "MVTec_AD":
             train_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=True, download=False)
             test_dataset_novel = self.class_dict[self.dataset_novel](self.data_dir, train=False, download=False)
             train_data_novel = torch.tensor(train_dataset_novel.data)
