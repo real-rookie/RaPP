@@ -142,7 +142,7 @@ class DataModule(pl.LightningDataModule):
             test_data_novel = torch.tensor(test_dataset_novel.data)
             unseen_data = torch.cat([train_data_novel, test_data_novel])
         else:
-            dataset = self.class_dict[self.dataset_normal](img_dir=self.data_dir, labels_path=self.data_dir)
+            dataset = self.class_dict[self.dataset_novel](img_dir=self.data_dir, labels_path=self.data_dir)
             unseen_data, _ = dataset.data_targets
 
         self.split_dataset(seen_data, unseen_data)
