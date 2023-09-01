@@ -150,6 +150,11 @@ class DataModule(pl.LightningDataModule):
     def split_dataset(self, seen_data, unseen_data):
         extra = dict(transform=self.default_transforms)
 
+        if seen_data.size(0) * 0.2 > unseen_data.size(0):
+            sample_idx = np.random.choice(len(seen_data), int(len(unseen_data)/0.2), replace=False)
+            sample_idx.sort()
+            seen_data = seen_data[sample_idx]
+
         train_size = int(seen_data.size(0) * 0.6)
         valid_size = int(seen_data.size(0) * 0.2)
         test_size = len(seen_data) - train_size - valid_size
