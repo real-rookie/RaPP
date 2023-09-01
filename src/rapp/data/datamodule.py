@@ -20,7 +20,7 @@ class DataModule(pl.LightningDataModule):
         data_dir: str = "./data",
         num_workers: int = 8,
         seed: int = 42,
-        batch_size: int = 256,
+        batch_size: int = 64,
         normal_label: int = 0,
     ):
         super().__init__()
@@ -43,7 +43,7 @@ class DataModule(pl.LightningDataModule):
         elif dataset_normal == "CIFAR10":
             self.image_size = 3 * 32 * 32
         elif dataset_normal == "MVTec_AD":
-            self.image_size = 3 * 128 * 128
+            self.image_size = 3 * 64 * 64
         assert self.image_size is not None
         self.data_dir = data_dir
         self.num_workers = num_workers
